@@ -5,20 +5,30 @@ import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.SceneAntialiasing;
 import javafx.scene.control.*;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Paint;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import javafx.stage.Window;
+import javafx.util.Pair;
 
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class MyApp extends Application {
+
+    // MENSH https://www.youtube.com/feeds/videos.xml?channel_id=UC2nWt5s1PYNL5auuZBYRaCg
+
+
+    private static final String UNIQLO_URL = "https://www.uniqlo.com/jp/ja/contents/corp/press-release/index.xml";
+    private static final String COMRAKOFF_URL = "https://www.youtube.com/feeds/videos.xml?channel_id=UChr1x_GdwoNkduX5956VyGA";
+
+
+    FeedManager feedManager;
+
+    public MyApp() {
+        super();
+        feedManager = new FeedManager();
+    }
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -28,18 +38,10 @@ public class MyApp extends Application {
         ScrollPane scrollPane = new ScrollPane(vBox);
         scrollPane.setFitToWidth(true);
 
-        VBox container = new VBox();
-        HBox buttonContainer = new HBox();
-        Button addRssFeedButton = new Button("Add New Rss Feed");
-        addRssFeedButton.setOnAction(event -> {
-            TextInputDialog dialog = new TextInputDialog();
-            dialog.setHeaderText("Add new rss link");
-            dialog.showAndWait().ifPresent(System.out::println);
-        });
+//        VBox container = new VBox();
 
-        buttonContainer.getChildren().addAll(addRssFeedButton);
 
-        container.getChildren().addAll(buttonContainer, scrollPane);
+//        container.getChildren().addAll(buttonContainer, scrollPane);
 
         BorderPane borderPane = new BorderPane();
         VBox left = new VBox(10);
@@ -83,6 +85,53 @@ public class MyApp extends Application {
         left.getChildren().addAll(
                 addedRss
         );
+
+
+        HBox buttonContainer = new HBox();
+        Button addRssFeedButton = new Button("Add New Rss Feed");
+        addRssFeedButton.setOnAction(event -> {
+            Dialog<Pair<String, String>> dialog = new Dialog<>();
+
+            GridPane grid = new GridPane();
+            grid.setHgap(10);
+            grid.setVgap(10);
+            grid.setPadding(new Insets(20, 150, 10, 10));
+
+            TextField feedName = new TextField();
+            feedName.setPromptText("Feed Name");
+            TextField feedUrl = new TextField();
+            feedUrl.setPromptText("Feed Url");
+
+            // https://code.makery.ch/blog/javafx-dialogs-official/
+            grid.add(new Label("Feed Name:"), 0, 0);
+            grid.add(feedName, 1, 0);
+            grid.add(new Label("Feed Url:"), 0, 1);
+            grid.add(feedUrl, 1, 1);
+
+            dialog.getDialogPane().setContent(grid);
+
+            dialog.setResultConverter(dialogButton ->
+            {
+                if (dialogButton.equals(ButtonType.APPLY)) {
+                    return new Pair<>(feedName.getText(), feedUrl.getText());
+                }
+                return null;
+            });
+            dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CLOSE);
+            // https://stackoverflow.com/questions/32048348/javafx-scene-control-dialogr-wont-close-on-pressing-x
+            var closeButton = dialog.getDialogPane().lookupButton(ButtonType.CLOSE);
+            closeButton.managedProperty().bind(closeButton.visibleProperty());
+            closeButton.setVisible(false);
+
+//            TextInputDialog dialog = new TextInputDialog();
+            dialog.setHeaderText("Add new rss link");
+            dialog.showAndWait().ifPresent(stringStringPair -> {
+                addNewRssFeed(stringStringPair, left, stage, vBox);
+            });
+        });
+        buttonContainer.getChildren().addAll(addRssFeedButton);
+
+
         borderPane.setTop(buttonContainer);
         borderPane.setLeft(left);
         borderPane.setCenter(scrollPane);
@@ -90,26 +139,43 @@ public class MyApp extends Application {
         BorderPane.setMargin(buttonContainer, new Insets(10));
         BorderPane.setMargin(left, new Insets(10));
         BorderPane.setMargin(scrollPane, new Insets(10));
-//        scrollPane.setFitToWidth(true);
-//        scrollPane.setMaxWidth(Double.MAX_VALUE);
-//        scrollPane.setStyle("-fx-border-color: cyan;");
 
 
         Scene scene = new Scene(borderPane, 800, 800);
         stage.setScene(scene);
 
         vBox.getChildren().addAll(
-                      createComrakoff(stage)
+                createLabels(stage, COMRAKOFF_URL)
         );
-        List<Label> comrakoff = createComrakoff(stage);
+        List<Label> comrakoff = createLabels(stage, COMRAKOFF_URL);
         l1.setOnMouseClicked(event -> {
             vBox.getChildren().setAll(comrakoff);
         });
-        List<Label> uniqlo = createUniqlo(stage);
+        List<Label> uniqlo = createLabels(stage, UNIQLO_URL);
         l2.setOnMouseClicked(event -> {
             vBox.getChildren().setAll(uniqlo);
         });
         stage.show();
+    }
+
+    private void addNewRssFeed(Pair<String, String> stringStringPair, VBox left, Stage stage, VBox vBox) {
+        try {
+//            Pair<String, List<FeedMessage>> aNew = feedManager.createNew(stringStringPair.getKey(), stringStringPair.getValue());
+            Label feedLabel = createNewFeedLabel(stringStringPair.getKey());
+
+
+            List<Label> labels = createLabels(stage, stringStringPair.getValue());
+            feedLabel.setOnMouseClicked(event -> {
+                vBox.getChildren().setAll(labels);
+            });
+
+
+            left.getChildren().add(feedLabel);
+
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static void main(String[] args) {
@@ -175,10 +241,8 @@ public class MyApp extends Application {
                 }).toList();
     }
 
-    List<Label> createUniqlo(Stage stage) throws Exception {
-//        RssParser parser1 = new RssParser("https://www.youtube.com/feeds/videos.xml?channel_id=UChr1x_GdwoNkduX5956VyGA", "comrakof");
-//        RssParser parser1 = new RssParser("https://netflixtechblog.com/feed", "netflix");
-        RssParser parser1 = new RssParser("https://www.uniqlo.com/jp/ja/contents/corp/press-release/index.xml", "netflix");
+    List<Label> createLabels(Stage stage, String url) throws Exception {
+        RssParser parser1 = new RssParser(url, "netflix");
 //        RssParser parser1 = new RssParser("https://blog.golodnyj.ru/feeds/posts/default?alt=rss", "netflix");
         List<FeedMessage> feedMessages = parser1.readRss();
         return feedMessages.stream()
@@ -215,13 +279,21 @@ public class MyApp extends Application {
                         stage.setScene(currentScene);
                     });
 
-                    descriptionText.setWrappingWidth(800);
 
 //                    content.getChildren().addAll(title, titleText, link, separator, description, descriptionText, backButton);
-                    ScrollPane scrollPane = new ScrollPane(new VBox() {{getChildren().addAll(backButton, title, titleText, link, separator, description, descriptionText);}});
+                    VBox content1 = new VBox() {{
+//                        getChildren().addAll(backButton, title, titleText, link, separator, description, descriptionText);
+                        getChildren().addAll(backButton, titleText, link, separator, descriptionText);
+                    }};
+//                    content1.setStyle("-fx-border-color: black;");
+                    ScrollPane scrollPane = new ScrollPane(content1);
+//                    scrollPane.setFitToWidth(true);
+
                     content.getChildren().addAll(scrollPane);
 
                     Scene scene = new Scene(content, 800, 800);
+                    content1.setPadding(new Insets(20));
+                    descriptionText.wrappingWidthProperty().bind(scrollPane.widthProperty().subtract(100));
 
                     label.setOnMouseClicked(event -> {
                         if (event.getClickCount() == 2) {
@@ -234,5 +306,23 @@ public class MyApp extends Application {
                     label.setStyle("-fx-border-color: black;");
                     return label;
                 }).toList();
+    }
+
+
+    private Label createNewFeedLabel(String name) {
+        Label l1 = new Label(name);
+        l1.setMinHeight(25);
+        l1.setMaxWidth(Double.MAX_VALUE);
+        l1.setAlignment(Pos.CENTER);
+        l1.setBackground(Background.fill(Paint.valueOf("#ffffff")));
+        l1.setOnMouseEntered(event -> {
+            l1.setBackground(Background.fill(Paint.valueOf("#e2cddb")));
+        });
+        l1.setOnMouseExited(event -> {
+            l1.setBackground(Background.fill(Paint.valueOf("#ffffff")));
+        });
+        l1.setStyle("-fx-border-color: black;");
+
+        return l1;
     }
 }
