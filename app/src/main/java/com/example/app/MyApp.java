@@ -144,9 +144,9 @@ public class MyApp extends Application {
         Scene scene = new Scene(borderPane, 800, 800);
         stage.setScene(scene);
 
-        vBox.getChildren().addAll(
-                createLabels(stage, COMRAKOFF_URL)
-        );
+//        vBox.getChildren().addAll(
+//                createLabels(stage, COMRAKOFF_URL)
+//        );
         List<Label> comrakoff = createLabels(stage, COMRAKOFF_URL);
         l1.setOnMouseClicked(event -> {
             vBox.getChildren().setAll(comrakoff);

@@ -9,6 +9,7 @@ plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     id 'application'
     id 'org.openjfx.javafxplugin' version '0.1.0'
+    id 'org.beryx.jlink' version '3.0.1'
 }
 
 repositories {
@@ -19,12 +20,10 @@ repositories {
 
 dependencies {
     // Use JUnit Jupiter for testing.
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.3'
+//    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.3'
 
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+//    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-    // This dependency is used by the application.
-    implementation 'com.google.guava:guava:32.1.1-jre'
 
     implementation 'com.rometools:rome:2.1.0'
 
@@ -37,10 +36,23 @@ java {
     }
 }
 
+jar {
+    manifest {
+        attributes(
+
+                'Main-Class': 'com.example.app.MyApp'
+        )
+    }
+
+//    from {
+//        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+//    }
+//    duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+}
 
 javafx {
     version = "22"
-    modules = [ 'javafx.controls', 'javafx.fxml' ]
+    modules = [ 'javafx.controls', 'javafx.fxml']
 }
 
 application {
@@ -51,4 +63,10 @@ application {
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+}
+
+jlink {
+    launcher {
+        name = 'hellofx'
+    }
 }
