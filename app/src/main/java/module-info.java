@@ -3,7 +3,7 @@ module myModule {
     requires jdk.crypto.ec;
     requires javafx.controls;
     requires java.xml;
-    requires com.rometools.rome;
+//    requires com.rometools.rome;
 
     exports com.example.app;
 }

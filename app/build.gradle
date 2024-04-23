@@ -67,6 +67,7 @@ tasks.named('test') {
 
 jlink {
     launcher {
-        name = 'hellofx'
+        name = 'rss-app'
     }
+    options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
 }
